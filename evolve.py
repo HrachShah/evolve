@@ -7,8 +7,8 @@ evolveVersion = '1.6'
 import sys
 import argparse
 if __name__ == '__main__':
-    print 'Python Version: ' + sys.version
-    print 'Evolve Version: ' + evolveVersion
+    print('Python Version: ' + sys.version)
+    print('Evolve Version: ' + evolveVersion)
 
     argParser = argparse.ArgumentParser(description='Web interface for Volatility Framework.')
     argParser.add_argument('--version', action='version', version='%(prog)s ' + evolveVersion)
@@ -26,7 +26,7 @@ if __name__ == '__main__':
 
     if not args.file:
         #raise BaseException("RAM dump file is required.")
-        print "RAM dump file is required."
+        print("RAM dump file is required.")
         exit()
 
 import os
@@ -37,12 +37,12 @@ import json
 import multiprocessing
 import hashlib
 import re
-import urllib
+import urllib.request, urllib.parse, urllib.error
 
 import volatility.constants as constants
 import volatility.conf as conf
 if __name__ == '__main__':
-    print 'Volatility Version: ' + constants.VERSION
+    print('Volatility Version: ' + constants.VERSION)
     config = conf.ConfObject()
     if args.plugins:
         config.PLUGINS = args.plugins
@@ -105,7 +105,7 @@ def BuildMorphList():
     morphpath = os.path.join(os.path.dirname(__file__), 'morphs')
     for morphfile in os.listdir(morphpath):
         if morphfile.endswith('py') and morphfile.lower() not in ['basemorph.py','__init__.py']:
-            print "found morph: " + morphfile
+            print("found morph: " + morphfile)
             __import__('morphs.' + morphfile.replace('.py',''))
     Plugins['morphs'] = []
     for sub in BaseMorph.__subclasses__():
@@ -132,7 +132,7 @@ def UpdatePluginList():
             cmdname['data'] = 0
         if cmdname['error'] == '' and cmdname['data'] != 2 and cmdname['name'] in tables:
             cmdname['data'] = 1
-        if cmdname['data'] == 2 and cmdname['name'] in jobs.keys():
+        if cmdname['data'] == 2 and cmdname['name'] in list(jobs.keys()):
             cmdname['error'] = jobs[cmdname['name']]
             if cmdname['name'] in tables:
                 cmdname['data'] = 1
@@ -157,9 +157,9 @@ if __name__ == '__main__':
     config.LOCATION = 'file://' + args.file
     config.OUTPUT_FILE = args.file + '.sqlite'
     if args.dbfolder:
-        print 'Hashing input file...',
+        print('Hashing input file...', end=' ')
         config.OUTPUT_FILE = os.path.join(args.dbfolder, hashlib.md5(open(args.file).read()).hexdigest() + '.sqlite')
-        print 'done'
+        print('done')
 
     #check for existing sqlite file and pull configs
     con = sqlite3.connect(config.OUTPUT_FILE)
@@ -172,7 +172,7 @@ if __name__ == '__main__':
     try:
         curs.execute(query)
     except Exception as err:
-        print err.message
+        print(err.message)
 
     profs = registry.get_plugin_classes(obj.Profile)
     if args.profile:
@@ -181,7 +181,7 @@ if __name__ == '__main__':
         config.PROFILE = 'WinXPSP2x86'
     if config.PROFILE not in profs:
         #raise BaseException("Invalid profile " + config.PROFILE + " selected")
-        print 'Invalid profile ' + config.PROFILE + ' selected'
+        print('Invalid profile ' + config.PROFILE + ' selected')
         exit()
 
     if args.kdbg:
@@ -260,7 +260,7 @@ def set_profile(pname):
     global config
     config.PROFILE = pname
     profile = profs[config.PROFILE]()
-    print 'Set profile to {0}'.format(pname)
+    print('Set profile to {0}'.format(pname))
     BuildPluginList()
     #UpdatePluginList()
 
@@ -384,7 +384,7 @@ def morph_set_config(name):
                 break
         return json.dumps({'result':'success'})
     except Exception as err:
-        print err.message + ': ' + str(err.args)
+        print(err.message + ': ' + str(err.args))
         return json.dumps({'result':'error','msg':err.message + ': ' + str(err.args)})
 
 # backend function for the jqueryFileTree
@@ -394,7 +394,7 @@ def dirlist():
     try:
         r = ['<ul class="jqueryFileTree" style="display: none;">']
         #d = request.forms.get('dir')
-        d = urllib.unquote(request.forms.get('dir'))
+        d = urllib.parse.unquote(request.forms.get('dir'))
         if os.name == 'nt':
             if d == '/':
                 drives = re.findall(r"[A-Z]+:.*$",os.popen('mountvol /').read(),re.MULTILINE)
@@ -418,7 +418,7 @@ def dirlist():
                     e=os.path.splitext(f)[1][1:] # get .ext and remove dot
                     r.append('<li class="file ext_%s"><a href="#" rel="%s">%s</a></li>' % (e,ff,f))
         r.append('</ul>')
-    except Exception,e:
+    except Exception as e:
         r.append('Could not load directory: %s' % str(e))
     r.append('</ul>')
     return r
@@ -430,14 +430,14 @@ def run_plugin_process(name, queue, config, cmds):
     registry.register_global_options(config, commands.Command)
     config.parse_options()
     command = cmds[name](config)
-    print 'running: ' + name
+    print('running: ' + name)
     errstr = ''
     try:
         calc = command.calculate()
         command.render_sqlite(config.OUTPUT_FILE, calc)
         #AddColumn(config.OUTPUT_FILE, name, 'profile', config.PROFILE)
     except Exception as err:
-        print name + ': ' + err.message
+        print(name + ': ' + err.message)
         errstr = err.message
     finally:
         result = {name:errstr}
