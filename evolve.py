@@ -418,7 +418,7 @@ def dirlist():
                     e=os.path.splitext(f)[1][1:] # get .ext and remove dot
                     r.append('<li class="file ext_%s"><a href="#" rel="%s">%s</a></li>' % (e,ff,f))
         r.append('</ul>')
-    except Exception,e:
+    except Exception as e:
         r.append('Could not load directory: %s' % str(e))
     r.append('</ul>')
     return r
