@@ -158,21 +158,27 @@ if __name__ == '__main__':
     config.OUTPUT_FILE = args.file + '.sqlite'
     if args.dbfolder:
         print 'Hashing input file...',
-        config.OUTPUT_FILE = os.path.join(args.dbfolder, hashlib.md5(open(args.file).read()).hexdigest() + '.sqlite')
+        with open(args.file, 'rb') as f:
+            file_hash = hashlib.md5(f.read()).hexdigest()
+        config.OUTPUT_FILE = os.path.join(args.dbfolder, file_hash + '.sqlite')
         print 'done'
 
     #check for existing sqlite file and pull configs
     con = sqlite3.connect(config.OUTPUT_FILE)
     curs = con.cursor()
-    query = 'create table if not exist metadata (filepath,evolve_ver,vol_ver,pysqlite_ver,sqlite_ver,vol_profile,vol_kdbg,datetime)'
+    curs.execute(
+        'create table if not exists metadata '
+        '(filepath,evolve_ver,vol_ver,pysqlite_ver,sqlite_ver,vol_profile,vol_kdbg,datetime)'
+    )
+    curs.execute(
+        'create table if not exists plugin_runs '
+        '(filepath,evolve_ver,vol_ver,vol_profile,vol_kdbg,datetime,vol_plugin,rowcount,vol_parameters)'
+    )
 
-    query = 'create table is not exist plugin_runs (fileptah,evolve_ver,vol_ver,vol_profile,vol_kdbg,datetime,vol_plugin,rowcount,vol_parameters)'
-
-    query = 'select * from metadata'
     try:
-        curs.execute(query)
-    except Exception as err:
-        print err.message
+        curs.execute('select * from metadata')
+    except sqlite3.OperationalError as err:
+        print('metadata table query failed: %s' % str(err))
 
     profs = registry.get_plugin_classes(obj.Profile)
     if args.profile:
