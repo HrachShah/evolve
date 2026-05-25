@@ -471,7 +471,7 @@ def AddColumn(db, table, column, value):
         query = "update {0} set {1} = '{2}' --where {1} is NULL;".format(table, column, value)
         #cur.execute('update ' + table + ' set ' + column + ' = \'' + value + '\' where ' + column + ' is null;')
         cur2.execute(query)
-    except:
+    except sqlite3.OperationalError:
         pass # handle the error
     cur2.close()
     con2.close()
