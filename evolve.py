@@ -171,7 +171,7 @@ if __name__ == '__main__':
     query = 'select * from metadata'
     try:
         curs.execute(query)
-    except Exception as err:
+    except (sqlite3.OperationalError, ValueError) as err:
         print(err.message)
 
     profs = registry.get_plugin_classes(obj.Profile)
@@ -280,7 +280,7 @@ def plugin_data(name, morph=''):
         curs.execute(query)
         result['data'] = curs.fetchall()
         result['columns'] = [i[0] for i in curs.description]
-    except Exception as err:
+    except (sqlite3.OperationalError, ValueError) as err:
         result['error'] = err.message
     result['name'] = name
     result['query'] = query
@@ -336,7 +336,7 @@ def pull_pid_data(table, value, result, name='', where='pid'):
         curs.execute('select * from ' + table + ' where ' + where + ' = ' + value)
         result['datasets'][name]['data'] = curs.fetchall()
         result['datasets'][name]['columns'] = [i[0] for i in curs.description]
-    except Exception as err:
+    except (sqlite3.OperationalError, ValueError) as err:
         result['error'] = err.message
     return result
 
@@ -383,7 +383,7 @@ def morph_set_config(name):
                 cls.SetConfig(request.json)
                 break
         return json.dumps({'result':'success'})
-    except Exception as err:
+    except (AttributeError, TypeError, ValueError) as err:
         print(err.message + ': ' + str(err.args))
         return json.dumps({'result':'error','msg':err.message + ': ' + str(err.args)})
 
@@ -418,7 +418,7 @@ def dirlist():
                     e=os.path.splitext(f)[1][1:] # get .ext and remove dot
                     r.append('<li class="file ext_%s"><a href="#" rel="%s">%s</a></li>' % (e,ff,f))
         r.append('</ul>')
-    except Exception as e:
+    except OSError as e:
         r.append('Could not load directory: %s' % str(e))
     r.append('</ul>')
     return r
@@ -436,7 +436,7 @@ def run_plugin_process(name, queue, config, cmds):
         calc = command.calculate()
         command.render_sqlite(config.OUTPUT_FILE, calc)
         #AddColumn(config.OUTPUT_FILE, name, 'profile', config.PROFILE)
-    except Exception as err:
+    except (sqlite3.OperationalError, OSError, ValueError, TypeError, KeyError) as err:
         print(name + ': ' + err.message)
         errstr = err.message
     finally:
