@@ -464,17 +464,21 @@ def AddColumn(db, table, column, value):
     cur = con.cursor()
     try:
         cur.execute('ALTER TABLE ' + table + ' ADD COLUMN ' + column + ' TEXT default NULL;')
-        cur.close()
-        con.close()
-        con2 = sqlite3.connect(db)
-        cur2 = con2.cursor()
+    except sqlite3.Error:
+        pass
+    cur.close()
+    con.close()
+
+    con2 = sqlite3.connect(db)
+    cur2 = con2.cursor()
+    try:
         query = "update {0} set {1} = '{2}' --where {1} is NULL;".format(table, column, value)
-        #cur.execute('update ' + table + ' set ' + column + ' = \'' + value + '\' where ' + column + ' is null;')
         cur2.execute(query)
-    except:
-        pass # handle the error
-    cur2.close()
-    con2.close()
+    except sqlite3.Error:
+        pass
+    finally:
+        cur2.close()
+        con2.close()
 
 if __name__ == '__main__':
     if args.run:
