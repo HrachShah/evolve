@@ -471,10 +471,27 @@ def AddColumn(db, table, column, value):
         query = "update {0} set {1} = '{2}' --where {1} is NULL;".format(table, column, value)
         #cur.execute('update ' + table + ' set ' + column + ' = \'' + value + '\' where ' + column + ' is null;')
         cur2.execute(query)
-    except:
-        pass # handle the error
-    cur2.close()
-    con2.close()
+    except sqlite3.DatabaseError as e:
+        # ALTER TABLE ADD COLUMN raises "duplicate column name" if a previous
+        # run of evolve already added the column; treat that as a no-op so
+        # re-running the migration is safe. Other database errors (file not
+        # a database, disk I/O) should still surface to the caller.
+        if 'duplicate column' not in str(e).lower():
+            raise
+    finally:
+        # The original code did `cur2.close(); con2.close()` unconditionally
+        # after the try/except, but if the first con.cursor() failed before
+        # con2 was ever assigned, those names were undefined. Close the
+        # resources we actually opened; the first con/cur pair is already
+        # closed above so re-closing here would be a no-op.
+        try:
+            cur2.close()
+        except (NameError, sqlite3.ProgrammingError):
+            pass
+        try:
+            con2.close()
+        except (NameError, sqlite3.ProgrammingError):
+            pass
 
 if __name__ == '__main__':
     if args.run:
