@@ -33,5 +33,22 @@ class filenamesNSRL(BaseMorph):
                         row = list(row)
                         row[colnum] = {'value':row[colnum],'style':'background-color:yellow;'}
                         data['data'][idx] = row
-                except:
+                except (IndexError, TypeError, ValueError):
+                    # IndexError: colnum is computed from
+                    # data['columns'].index('Name') and the row tuple
+                    # may have been hand-trimmed by an upstream plugin
+                    # (pslist, psxview) to fewer columns than
+                    # data['columns'] reports.
+                    # TypeError: row[colnum] can raise if the column
+                    # value is not subscriptable (e.g. a pre-flattened
+                    # record from a custom pslist plugin).
+                    # ValueError: list(row) can raise on malformed
+                    # numpy record rows with non-uniform dtypes.
+                    # The bare except: also caught KeyboardInterrupt
+                    # and SystemExit, which should propagate, and
+                    # silently swallowed any future bug introduced
+                    # into the row-mutate path. The narrow tuple
+                    # keeps the documented 'highlight unmatched
+                    # names' behavior for the three real row-shape
+                    # failure modes while letting real bugs surface.
                     pass
