@@ -394,7 +394,12 @@ def dirlist():
     try:
         r = ['<ul class="jqueryFileTree" style="display: none;">']
         #d = request.forms.get('dir')
-        d = urllib.unquote(request.forms.get('dir'))
+        d = request.forms.get('dir')
+        if d is None:
+            r.append('Could not load directory: missing "dir" parameter')
+            r.append('</ul>')
+            return r
+        d = urllib.unquote(d)
         if os.name == 'nt':
             if d == '/':
                 drives = re.findall(r"[A-Z]+:.*$",os.popen('mountvol /').read(),re.MULTILINE)
